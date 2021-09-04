@@ -13,28 +13,24 @@ fn get_next_word(request: &str) -> Option<(&str, &str)> {
     None
 }
 
-pub struct Request {
-    path: &str,
-    query_string: Option<&str>,
+// buf is a lifetime of buffer
+pub struct Request<'buf> {
+    path: &'buf str,
+    query_string: Option<&'buf str>,
     method: Method,
 }
 
-impl TryFrom<&[u8]> for Request {
+impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     type Error = ParseError;
 
     // GET /search?name=abc&sort=1 HTTP/1.1
-    fn try_from(buffer: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(buffer: &'buf [u8]) -> Result<Self, Self::Error> {
         let request = str::from_utf8(buffer)?;
-        let (method, request) = get_next_word(request).ok_or(
-            ParseError::InvalidRequest
-        )?;
-        let (mut path, request) = get_next_word(request).ok_or(
-            ParseError::InvalidRequest
-        )?;
-        let (protocal, _) = get_next_word(request).ok_or(
-            ParseError::InvalidRequest
-        )?;
-        if protocal != "HTTP/1/1" {
+
+        let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        if protocol != "HTTP/1/1" {
             return Err(ParseError::InvalidProtocol);
         }
 
@@ -47,9 +43,9 @@ impl TryFrom<&[u8]> for Request {
         }
 
         Ok(Self {
-            path: path,
+            path,
             query_string,
-            method
+            method,
         })
     }
 }
