@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::{str, str::Utf8Error};
+use super::QueryString;
 
 fn get_next_word(request: &str) -> Option<(&str, &str)> {
     for (i, c) in request.chars().enumerate() {
@@ -14,9 +15,10 @@ fn get_next_word(request: &str) -> Option<(&str, &str)> {
 }
 
 // buf is a lifetime of buffer
+#[derive(Debug)]
 pub struct Request<'buf> {
     path: &'buf str,
-    query_string: Option<&'buf str>,
+    query_string: Option<QueryString<'buf>>,
     method: Method,
 }
 
@@ -30,7 +32,7 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
-        if protocol != "HTTP/1/1" {
+        if protocol != "HTTP/1.1" {
             return Err(ParseError::InvalidProtocol);
         }
 
@@ -38,7 +40,7 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
         let mut query_string = None;
 
         if let Some(i) = path.find('?') {
-            query_string = Some(&path[i + 1..]);
+            query_string = Some(QueryString::from(&path[i + 1..]));
             path = &path[..i];
         }
 

@@ -1,6 +1,6 @@
 use std::str::FromStr;
-// use std::error::Error;
 
+#[derive(Debug)]
 pub enum Method {
     CONNECT,
     DELETE,
