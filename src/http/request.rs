@@ -20,6 +20,7 @@ pub struct Request<'buf> {
     path: &'buf str,
     query_string: Option<QueryString<'buf>>,
     method: Method,
+    // TODO extend request to handle headers
 }
 
 impl<'buf> Request<'buf> {
